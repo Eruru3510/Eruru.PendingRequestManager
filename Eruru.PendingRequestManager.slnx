@@ -1,0 +1,12 @@
+<Solution>
+	<Folder Name="/解决方案项/">
+		<File Path=".editorconfig" />
+		<File Path=".gitignore" />
+		<File Path="Directory.Build.props" />
+		<File Path="Directory.Packages.props" />
+		<File Path="README.md" />
+	</Folder>
+	<Project Path="samples/Eruru.PendingRequestManagerSample/Eruru.PendingRequestManagerSample.csproj" Id="dc8a9809-029c-4073-9ab5-35e99de9e56c" />
+	<Project Path="src/Eruru.PendingRequestManager/Eruru.PendingRequestManager.csproj" Id="7fa6d919-9580-4909-b38a-c5eca571a90e" />
+	<Project Path="tests/Eruru.PendingRequestManagerTests/Eruru.PendingRequestManagerTests.csproj" Id="d1c6b125-3a31-429e-a6bf-8f01cf11cb88" />
+</Solution>
