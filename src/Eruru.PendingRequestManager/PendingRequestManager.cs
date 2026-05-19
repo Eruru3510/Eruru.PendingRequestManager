@@ -13,7 +13,7 @@ namespace Eruru.PendingRequestManager {
 		int State;
 
 		protected virtual void Dispose (bool disposing) {
-			if (Interlocked.CompareExchange (ref State, 1, 0) != 0) {
+			if (Interlocked.Exchange (ref State, 1) != 0) {
 				return;
 			}
 			if (disposing) {
@@ -76,7 +76,7 @@ namespace Eruru.PendingRequestManager {
 				pendingRequest.Dispose ();
 				throw;
 			}
-			if (Interlocked.CompareExchange (ref State, 0, 0) != 0) {
+			if (Volatile.Read (ref State) != 0) {
 				PendingRequests.TryRemove (key, out _);
 				pendingRequest.Dispose ();
 				throw new ObjectDisposedException (nameof (PendingRequestManager<,>));
@@ -161,7 +161,7 @@ namespace Eruru.PendingRequestManager {
 			int State;
 
 			public void Dispose () {
-				if (Interlocked.CompareExchange (ref State, 1, 0) != 0) {
+				if (Interlocked.Exchange (ref State, 1) != 0) {
 					return;
 				}
 				CancellationTokenSource?.Dispose ();
