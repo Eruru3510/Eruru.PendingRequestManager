@@ -20,8 +20,8 @@ namespace Eruru.PendingRequestManagerSample {
 				BeginRquestAsync (),
 				BeginReceiveAsync ()
 			).ConfigureAwait (false);
-			async Task BeginRquestAsync () {
-				await Task.WhenAll (Enumerable.Range (0, 3).Select (async _ => {
+			Task BeginRquestAsync () {
+				return Task.WhenAll (Enumerable.Range (0, 3).Select (async _ => {
 					var key = Interlocked.Increment (ref id);
 					using var cancellationTokenSource = new CancellationTokenSource (TimeSpan.FromSeconds (2));
 					// 尝试创建 Task
@@ -50,7 +50,7 @@ namespace Eruru.PendingRequestManagerSample {
 					// Await the task result
 					var result = await task!.ConfigureAwait (false);
 					Console.WriteLine ($"{DateTime.Now:O} Request {nameof (key)}: {task.AsyncState} received response {nameof (result)}: {result}");
-				})).ConfigureAwait (false);
+				}));
 			}
 			async Task BeginReceiveAsync () {
 				for (var i = 0; i < 3; i++) {
