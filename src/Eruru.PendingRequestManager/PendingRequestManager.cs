@@ -17,7 +17,7 @@ namespace Eruru.PendingRequestManager {
 				return;
 			}
 			if (disposing) {
-				foreach (var pendingRequest in PendingRequests.ToArray ()) {
+				foreach (var pendingRequest in PendingRequests.ToArray ()) { // HACK: 改为等待所有 PendingRequest 执行完毕安全退出
 					PendingRequests.TryRemove (pendingRequest.Key, out _);
 					pendingRequest.Value.Dispose ();
 				}
@@ -34,6 +34,7 @@ namespace Eruru.PendingRequestManager {
 			, object? state = null, TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously
 			, CancellationToken? cancellationToken = null
 		) {
+			CheckDisposed ();
 			var taskCompletionSource = new TaskCompletionSource<TValue> (state, taskCreationOptions);
 			CancellationTokenSource? cancellationTokenSource = null;
 			PendingRequest pendingRequest;
@@ -137,7 +138,7 @@ namespace Eruru.PendingRequestManager {
 			throw new ObjectDisposedException (nameof (PendingRequestManager<,>));
 		}
 
-		sealed class RegisterArgs (PendingRequestManager<TKey, TValue> pendingRequestManager, TKey key) {
+		readonly struct RegisterArgs (PendingRequestManager<TKey, TValue> pendingRequestManager, TKey key) {
 
 			readonly PendingRequestManager<TKey, TValue> PendingRequestManager = pendingRequestManager;
 			readonly TKey Key = key;
@@ -164,8 +165,8 @@ namespace Eruru.PendingRequestManager {
 				if (Interlocked.Exchange (ref State, 1) != 0) {
 					return;
 				}
-				CancellationTokenSource?.Dispose ();
 				CancellationTokenRegistration?.Dispose ();
+				CancellationTokenSource?.Dispose ();
 				TaskCompletionSource.TrySetException (new ObjectDisposedException (nameof (PendingRequestManager<,>)));
 			}
 
