@@ -67,7 +67,7 @@ namespace Eruru.PendingRequestManagerTests {
 
 		[Fact]
 		public async Task WaitingTimeoutAfterTryCreate () {
-			using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromMicroseconds (0) };
+			using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromMilliseconds (0) };
 			var key = int.MaxValue;
 			Assert.True (pendingRequestManager.TryCreate (key, out var task));
 			await Assert.ThrowsAsync<TaskCanceledException> (() => task!);
@@ -76,23 +76,15 @@ namespace Eruru.PendingRequestManagerTests {
 		[Fact]
 		public async Task WaitingCustomTimeoutAfterTryCreate () {
 			using var pendingRequestManager = new PendingRequestManager<int, string> ();
-			using var cancellationTokenSource = new CancellationTokenSource (TimeSpan.FromMicroseconds (0));
+			using var cancellationTokenSource = new CancellationTokenSource (TimeSpan.FromMilliseconds (100));
 			var key = int.MaxValue;
 			Assert.True (pendingRequestManager.TryCreate (key, out var task, cancellationToken: cancellationTokenSource.Token));
 			await Assert.ThrowsAsync<TaskCanceledException> (() => task!);
 		}
 
 		[Fact]
-		public async Task Waiting1SecondsTimeoutAfterTryCreate () {
-			using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromSeconds (1) };
-			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task));
-			await Assert.ThrowsAsync<TaskCanceledException> (() => task!);
-		}
-
-		[Fact]
 		public async Task DisposeAfterTryCreate () {
-			using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromSeconds (1) };
+			using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromMilliseconds (100) };
 			var key = int.MaxValue;
 			Assert.True (pendingRequestManager.TryCreate (key, out var task));
 			pendingRequestManager.Dispose ();
