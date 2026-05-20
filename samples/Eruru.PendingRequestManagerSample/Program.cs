@@ -40,8 +40,8 @@ namespace Eruru.PendingRequestManagerSample {
 					try {
 						Console.WriteLine ($"{DateTime.Now:O} Send request by {nameof (key)}: {key}");
 						await channel.Writer.WriteAsync (new () {
-						{ "id", key }
-					}).ConfigureAwait (false);
+							{ "id", key }
+						}).ConfigureAwait (false);
 					} catch {
 						pendingRequestManager.TrySetCanceled (key);
 						throw;
