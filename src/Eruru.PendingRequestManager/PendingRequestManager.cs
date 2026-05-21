@@ -13,14 +13,12 @@ namespace Eruru.PendingRequestManager {
 		int State;
 
 		protected virtual void Dispose (bool disposing) {
-			if (Interlocked.Exchange (ref State, 1) != 0) {
+			if (Interlocked.Exchange (ref State, 1) != 0 || !disposing) {
 				return;
 			}
-			if (disposing) {
-				foreach (var pendingRequest in PendingRequests.ToArray ()) { // HACK: 改为等待所有 PendingRequest 执行完毕安全退出
-					PendingRequests.TryRemove (pendingRequest.Key, out _);
-					pendingRequest.Value.Dispose ();
-				}
+			foreach (var pendingRequest in PendingRequests.ToArray ()) { // HACK: 改为等待所有 PendingRequest 执行完毕安全退出
+				PendingRequests.TryRemove (pendingRequest.Key, out _);
+				pendingRequest.Value.Dispose ();
 			}
 		}
 
@@ -61,9 +59,10 @@ namespace Eruru.PendingRequestManager {
 			try {
 				if (token.CanBeCanceled) {
 					var cancellationTokenRegistration = token.Register (static tokenState => {
-						if (tokenState is RegisterArgs registerArgs) {
-							registerArgs.TrySetCanceled ();
+						if (tokenState is not RegisterArgs registerArgs) {
+							return;
 						}
+						registerArgs.TrySetCanceled ();
 					}, new RegisterArgs (this, key), false);
 					pendingRequest.CancellationTokenRegistration = cancellationTokenRegistration;
 					if (token.IsCancellationRequested) {
