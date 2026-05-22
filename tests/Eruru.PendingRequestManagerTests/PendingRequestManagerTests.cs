@@ -21,27 +21,27 @@ namespace Eruru.PendingRequestManagerTests {
 		public async Task TrySetResult () {
 			using var pendingRequestManager = new PendingRequestManager<int, string> ();
 			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task));
+			Assert.True (pendingRequestManager.TryCreate (key, out var task) && task != null);
 			Assert.True (pendingRequestManager.TrySetResult (key, nameof (PendingRequestManager)));
-			Assert.Equal (nameof (PendingRequestManager), await task!.ConfigureAwait (true));
+			Assert.Equal (nameof (PendingRequestManager), await task.ConfigureAwait (true));
 		}
 
 		[Fact]
 		public Task TrySetException () {
 			using var pendingRequestManager = new PendingRequestManager<int, string> ();
 			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task));
+			Assert.True (pendingRequestManager.TryCreate (key, out var task) && task != null);
 			Assert.True (pendingRequestManager.TrySetException (key, new HttpRequestException ()));
-			return Assert.ThrowsAsync<HttpRequestException> (() => task!);
+			return Assert.ThrowsAsync<HttpRequestException> (() => task);
 		}
 
 		[Fact]
 		public Task TrySetCanceled () {
 			using var pendingRequestManager = new PendingRequestManager<int, string> ();
 			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task));
+			Assert.True (pendingRequestManager.TryCreate (key, out var task) && task != null);
 			Assert.True (pendingRequestManager.TrySetCanceled (key));
-			return Assert.ThrowsAsync<TaskCanceledException> (() => task!);
+			return Assert.ThrowsAsync<TaskCanceledException> (() => task);
 		}
 
 		[Fact]
@@ -69,8 +69,8 @@ namespace Eruru.PendingRequestManagerTests {
 		public async Task WaitingTimeoutAfterTryCreate () {
 			using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromMilliseconds (0) };
 			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task));
-			await Assert.ThrowsAsync<TaskCanceledException> (() => task!);
+			Assert.True (pendingRequestManager.TryCreate (key, out var task) && task != null);
+			await Assert.ThrowsAsync<TaskCanceledException> (() => task);
 		}
 
 		[Fact]
@@ -78,17 +78,19 @@ namespace Eruru.PendingRequestManagerTests {
 			using var pendingRequestManager = new PendingRequestManager<int, string> ();
 			using var cancellationTokenSource = new CancellationTokenSource (TimeSpan.FromMilliseconds (100));
 			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task, cancellationToken: cancellationTokenSource.Token));
-			await Assert.ThrowsAsync<TaskCanceledException> (() => task!);
+			Assert.True (pendingRequestManager.TryCreate (
+				key, out var task, cancellationToken: cancellationTokenSource.Token
+			) && task != null);
+			await Assert.ThrowsAsync<TaskCanceledException> (() => task);
 		}
 
 		[Fact]
 		public async Task DisposeAfterTryCreate () {
 			using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromMilliseconds (100) };
 			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task));
+			Assert.True (pendingRequestManager.TryCreate (key, out var task) && task != null);
 			pendingRequestManager.Dispose ();
-			await Assert.ThrowsAsync<ObjectDisposedException> (() => task!);
+			await Assert.ThrowsAsync<ObjectDisposedException> (() => task);
 		}
 
 		[Fact]
@@ -108,11 +110,11 @@ namespace Eruru.PendingRequestManagerTests {
 						}
 						var key = Interlocked.Increment (ref useCounter);
 						try {
-							if (!oldPendingRequestManager.TryCreate (key, out var task)) {
+							if (!oldPendingRequestManager.TryCreate (key, out var task) || task == null) {
 								continue;
 							}
 							oldPendingRequestManager.TrySetResult (key, nameof (PendingRequestManager));
-							Assert.Equal (nameof (PendingRequestManager), await task!.ConfigureAwait (false)!);
+							Assert.Equal (nameof (PendingRequestManager), await task.ConfigureAwait (false));
 						} catch (ObjectDisposedException) {
 
 						} catch (OperationCanceledException) {

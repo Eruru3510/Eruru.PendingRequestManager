@@ -34,7 +34,7 @@ namespace Eruru.PendingRequestManagerSample {
 						// 设置该 Task 的超时时间，忽略管理器的超时时间
 						// Set a timeout for this task and override the manager timeout
 						, cancellationToken: cancellationTokenSource.Token
-					)) {
+					) || task == null) {
 						return;
 					}
 					try {
@@ -48,7 +48,7 @@ namespace Eruru.PendingRequestManagerSample {
 					}
 					// 等待 Task 获取结果
 					// Await the task result
-					var result = await task!.ConfigureAwait (false);
+					var result = await task.ConfigureAwait (false);
 					Console.WriteLine ($"{DateTime.Now:O} Request {nameof (key)}: {task.AsyncState} received response {nameof (result)}: {result}");
 				}));
 			}
@@ -56,13 +56,13 @@ namespace Eruru.PendingRequestManagerSample {
 				for (var i = 0; i < 3; i++) {
 					var jsonObject = await channel.Reader.ReadAsync ().ConfigureAwait (false);
 					await Task.Delay (500).ConfigureAwait (false);
-					if (!jsonObject.TryGetPropertyValue ("id", out var id)) {
+					if (!jsonObject.TryGetPropertyValue ("id", out var id) || id == null) {
 						continue;
 					}
 					// 为该 Key 对应的 Task 设置结果，如果未触发则由超时时间自动取消 Task 避免无限期等待
 					// Set the result for the task associated with the key.
 					// If no result is provided, the task will be automatically canceled by timeout to avoid waiting indefinitely.
-					pendingRequestManager.TrySetResult (id!.GetValue<int> (), $"{nameof (PendingRequestManager)} {id}");
+					pendingRequestManager.TrySetResult (id.GetValue<int> (), $"{nameof (PendingRequestManager)} {id}");
 				}
 			}
 		}
