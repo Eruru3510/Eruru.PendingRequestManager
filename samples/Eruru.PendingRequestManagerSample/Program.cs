@@ -23,7 +23,7 @@ namespace Eruru.PendingRequestManagerSample {
 			Task BeginRquestAsync () {
 				return Task.WhenAll (Enumerable.Range (0, 3).Select (async _ => {
 					var key = Interlocked.Increment (ref id);
-					using var cancellationTokenSource = new CancellationTokenSource (TimeSpan.FromSeconds (2));
+					using var cancellationTokenSource = new CancellationTokenSource (TimeSpan.FromMilliseconds (2000));
 					// 尝试创建 Task
 					// Try to create a task
 					if (!pendingRequestManager.TryCreate (

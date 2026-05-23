@@ -95,7 +95,7 @@ namespace Eruru.PendingRequestManagerTests {
 
 		[Fact]
 		public async Task ThreadSafe () {
-			using var cancellationTokenSource = new CancellationTokenSource (TimeSpan.FromSeconds (1));
+			using var cancellationTokenSource = new CancellationTokenSource (TimeSpan.FromMilliseconds (1000));
 			PendingRequestManager<int, string>? pendingRequestManager = null;
 			PendingRequestManager<int, string>? newPendingRequestManager = null;
 			ConcurrentQueue<PendingRequestManager<int, string>> pendingRequestManagers = [];
