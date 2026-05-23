@@ -32,7 +32,9 @@ namespace Eruru.PendingRequestManagerTests {
 			var key = int.MaxValue;
 			Assert.True (pendingRequestManager.TryCreate (key, out var task) && task != null);
 			Assert.True (pendingRequestManager.TrySetException (key, new HttpRequestException ()));
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 			return Assert.ThrowsAsync<HttpRequestException> (() => task);
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
 		}
 
 		[Fact]
@@ -41,7 +43,9 @@ namespace Eruru.PendingRequestManagerTests {
 			var key = int.MaxValue;
 			Assert.True (pendingRequestManager.TryCreate (key, out var task) && task != null);
 			Assert.True (pendingRequestManager.TrySetCanceled (key));
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 			return Assert.ThrowsAsync<TaskCanceledException> (() => task);
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
 		}
 
 		[Fact]
@@ -70,7 +74,9 @@ namespace Eruru.PendingRequestManagerTests {
 			using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromMilliseconds (0) };
 			var key = int.MaxValue;
 			Assert.True (pendingRequestManager.TryCreate (key, out var task) && task != null);
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 			await Assert.ThrowsAsync<TaskCanceledException> (() => task);
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
 		}
 
 		[Fact]
@@ -81,7 +87,9 @@ namespace Eruru.PendingRequestManagerTests {
 			Assert.True (pendingRequestManager.TryCreate (
 				key, out var task, cancellationToken: cancellationTokenSource.Token
 			) && task != null);
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 			await Assert.ThrowsAsync<TaskCanceledException> (() => task);
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
 		}
 
 		[Fact]
@@ -90,7 +98,9 @@ namespace Eruru.PendingRequestManagerTests {
 			var key = int.MaxValue;
 			Assert.True (pendingRequestManager.TryCreate (key, out var task) && task != null);
 			pendingRequestManager.Dispose ();
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 			await Assert.ThrowsAsync<ObjectDisposedException> (() => task);
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
 		}
 
 		[Fact]
