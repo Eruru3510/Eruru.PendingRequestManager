@@ -1,6 +1,6 @@
 Eruru.PendingRequestManager
 
-A high-performance, thread-safe AOT-compatible asynchronous pending request manager for .NET.
+A high-performance, thread-safe, AOT-compatible asynchronous pending request manager for .NET.
 
 Designed for request-response workflows, RPC systems, network protocols, socket communication, IPC, game servers, message buses, async correlation IDs, and any scenario where a request must later be completed by a matching key.
 
