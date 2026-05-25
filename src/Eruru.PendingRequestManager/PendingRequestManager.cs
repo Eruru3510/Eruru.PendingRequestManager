@@ -148,11 +148,7 @@ namespace Eruru.PendingRequestManager {
 			throw new ObjectDisposedException (nameof (PendingRequestManager<,>));
 		}
 
-#pragma warning disable IDE0079 // 请删除不必要的忽略
-#pragma warning disable CA1815 // 重写值类型上的 Equals 和相等运算符
 		readonly struct PendingRequestManagerCreate (
-#pragma warning restore CA1815 // 重写值类型上的 Equals 和相等运算符
-#pragma warning restore IDE0079 // 请删除不必要的忽略
 			PendingRequestManager<TKey, TValue>? pendingRequestManager, TKey key
 		) : IDisposable {
 
