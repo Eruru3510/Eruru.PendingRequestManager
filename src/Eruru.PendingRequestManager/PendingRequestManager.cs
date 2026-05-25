@@ -136,9 +136,9 @@ namespace Eruru.PendingRequestManager {
 			, CancellationToken? cancellationToken = null
 		) {
 			if (!TryCreate (key, out task, state, taskCreationOptions, cancellationToken)) {
-				return new PendingRequestManagerCreate<TKey, TValue> (null, key);
+				return new PendingRequestManagerCreate (null, key);
 			}
-			return new PendingRequestManagerCreate<TKey, TValue> (this, key);
+			return new PendingRequestManagerCreate (this, key);
 		}
 
 		void CheckDisposed () {
@@ -146,6 +146,23 @@ namespace Eruru.PendingRequestManager {
 				return;
 			}
 			throw new ObjectDisposedException (nameof (PendingRequestManager<,>));
+		}
+
+#pragma warning disable IDE0079 // 请删除不必要的忽略
+#pragma warning disable CA1815 // 重写值类型上的 Equals 和相等运算符
+		readonly struct PendingRequestManagerCreate (
+#pragma warning restore CA1815 // 重写值类型上的 Equals 和相等运算符
+#pragma warning restore IDE0079 // 请删除不必要的忽略
+			PendingRequestManager<TKey, TValue>? pendingRequestManager, TKey key
+		) : IDisposable {
+
+			readonly PendingRequestManager<TKey, TValue>? PendingRequestManager = pendingRequestManager;
+			readonly TKey Key = key;
+
+			public void Dispose () {
+				PendingRequestManager?.TrySetCanceled (Key);
+			}
+
 		}
 
 		sealed class PendingRequest (
