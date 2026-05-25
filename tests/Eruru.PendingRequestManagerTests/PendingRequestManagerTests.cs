@@ -120,7 +120,8 @@ namespace Eruru.PendingRequestManagerTests {
 						}
 						var key = Interlocked.Increment (ref useCounter);
 						try {
-							if (!oldPendingRequestManager.TryCreate (key, out var task) || task == null) {
+							using var _ = oldPendingRequestManager.Create (key, out var task);
+							if (task == null) {
 								continue;
 							}
 							oldPendingRequestManager.TrySetResult (key, nameof (PendingRequestManager));

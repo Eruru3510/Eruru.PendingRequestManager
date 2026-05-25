@@ -21,12 +21,12 @@ namespace Eruru.PendingRequestManagerSample {
 				BeginReceiveAsync ()
 			).ConfigureAwait (false);
 			Task BeginRquestAsync () {
-				return Task.WhenAll (Enumerable.Range (0, 3).Select (async _ => {
+				return Task.WhenAll (Enumerable.Range (0, 3).Select (async i => {
 					var key = Interlocked.Increment (ref id);
 					using var cancellationTokenSource = new CancellationTokenSource (TimeSpan.FromMilliseconds (2000));
 					// 尝试创建 Task
 					// Try to create a task
-					if (!pendingRequestManager.TryCreate (
+					using var _ = pendingRequestManager.Create (
 						// 避免和正在等待中的 Key 重复
 						// Avoid duplicate keys with pending requests
 						key
@@ -34,18 +34,14 @@ namespace Eruru.PendingRequestManagerSample {
 						// 设置该 Task 的超时时间，忽略管理器的超时时间
 						// Set a timeout for this task and override the manager timeout
 						, cancellationToken: cancellationTokenSource.Token
-					) || task == null) {
+					);
+					if (task == null) {
 						return;
 					}
-					try {
-						Console.WriteLine ($"{DateTime.Now:O} Send request by {nameof (key)}: {key}");
-						await channel.Writer.WriteAsync (new () {
-							{ "id", key }
-						}).ConfigureAwait (false);
-					} catch {
-						pendingRequestManager.TrySetCanceled (key);
-						throw;
-					}
+					Console.WriteLine ($"{DateTime.Now:O} Send request by {nameof (key)}: {key}");
+					await channel.Writer.WriteAsync (new () {
+						{ "id", key }
+					}).ConfigureAwait (false);
 					// 等待 Task 获取结果
 					// Await the task result
 					var result = await task.ConfigureAwait (false);

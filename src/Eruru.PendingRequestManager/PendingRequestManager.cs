@@ -130,6 +130,17 @@ namespace Eruru.PendingRequestManager {
 			}
 		}
 
+		public IDisposable Create (
+			TKey key, out Task<TValue>? task
+			, object? state = null, TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously
+			, CancellationToken? cancellationToken = null
+		) {
+			if (!TryCreate (key, out task, state, taskCreationOptions, cancellationToken)) {
+				return new PendingRequestManagerCreate<TKey, TValue> (null, key);
+			}
+			return new PendingRequestManagerCreate<TKey, TValue> (this, key);
+		}
+
 		void CheckDisposed () {
 			if (Volatile.Read (ref State) == 0) {
 				return;
