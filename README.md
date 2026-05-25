@@ -1,4 +1,4 @@
-Eruru.PendingRequestManager
+# Eruru.PendingRequestManager
 
 A high-performance, thread-safe, AOT-compatible asynchronous pending request manager for .NET.
 
