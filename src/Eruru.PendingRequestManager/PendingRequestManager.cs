@@ -58,12 +58,12 @@ namespace Eruru.PendingRequestManager {
 			}
 			try {
 				if (token.CanBeCanceled) {
-					var cancellationTokenRegistration = token.Register (static tokenState => {
-						if (tokenState is not RegisterArgs registerArgs) {
+					var cancellationTokenRegistration = token.Register (static state => {
+						if (state is not ValueTuple<PendingRequestManager<TKey, TValue>, TKey> tuple) {
 							return;
 						}
-						registerArgs.TrySetCanceled ();
-					}, new RegisterArgs (this, key), false);
+						tuple.Item1.TrySetCanceled (tuple.Item2);
+					}, (this, key), false);
 					pendingRequest.CancellationTokenRegistration = cancellationTokenRegistration;
 					if (token.IsCancellationRequested) {
 						pendingRequest.TrySetCanceled ();
@@ -146,17 +146,6 @@ namespace Eruru.PendingRequestManager {
 				return;
 			}
 			throw new ObjectDisposedException (nameof (PendingRequestManager<,>));
-		}
-
-		readonly struct RegisterArgs (PendingRequestManager<TKey, TValue> pendingRequestManager, TKey key) {
-
-			readonly PendingRequestManager<TKey, TValue> PendingRequestManager = pendingRequestManager;
-			readonly TKey Key = key;
-
-			public bool TrySetCanceled () {
-				return PendingRequestManager.TrySetCanceled (Key);
-			}
-
 		}
 
 		sealed class PendingRequest (
