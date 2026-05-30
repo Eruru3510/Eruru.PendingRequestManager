@@ -21,7 +21,6 @@ namespace Eruru.PendingRequestManager {
 				pendingRequest.Value.Dispose ();
 			}
 		}
-
 		public void Dispose () {
 			Dispose (true);
 			GC.SuppressFinalize (this);
