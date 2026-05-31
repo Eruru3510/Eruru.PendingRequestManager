@@ -31,8 +31,8 @@ namespace Eruru.PendingRequestManagerSample {
 						// Avoid duplicate keys with pending requests
 						key
 						, out var task, state: key
-						// 设置该 Task 的超时时间，忽略管理器的超时时间
-						// Set a timeout for this task and override the manager timeout
+						// 设置该 Task 的超时时间
+						// Set a timeout for this task
 						, cancellationToken: cancellationTokenSource.Token
 					);
 					if (task == null) {

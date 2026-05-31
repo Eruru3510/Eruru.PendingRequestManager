@@ -27,24 +27,21 @@ namespace Eruru.PendingRequestManager {
 		}
 
 		public bool TryCreate (
-			TKey key, out Task<TValue>? task
-			, object? state = null, TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously
-			, CancellationToken? cancellationToken = null
+			TKey key, out Task<TValue>? task, object? state, TaskCreationOptions taskCreationOptions,
+			CancellationToken cancellationToken
 		) {
 			CheckDisposed ();
-			var taskCompletionSource = new TaskCompletionSource<TValue> (state, taskCreationOptions);
-			CancellationTokenSource? cancellationTokenSource = null;
-			PendingRequest pendingRequest;
-			CancellationToken token;
-			if (cancellationToken.HasValue) {
-				token = cancellationToken.Value;
-			} else {
 #pragma warning disable CA2000 // 丢失范围之前释放对象
-				cancellationTokenSource = new CancellationTokenSource (Timeout);
+			var cancellationTokenSource = new CancellationTokenSource (Timeout);
+			var cancellationTokenSource1 = CancellationTokenSource.CreateLinkedTokenSource (
 #pragma warning restore CA2000 // 丢失范围之前释放对象
-				token = cancellationTokenSource.Token;
-			}
-			pendingRequest = new (taskCompletionSource, cancellationTokenSource, token);
+				cancellationTokenSource.Token, cancellationToken
+			);
+			cancellationToken = cancellationTokenSource1.Token;
+			var taskCompletionSource = new TaskCompletionSource<TValue> (state, taskCreationOptions);
+			var pendingRequest = new PendingRequest (
+				taskCompletionSource, cancellationTokenSource, cancellationTokenSource1, cancellationToken
+			);
 			try {
 				if (!PendingRequests.TryAdd (key, pendingRequest)) {
 					pendingRequest.Dispose ();
@@ -56,15 +53,15 @@ namespace Eruru.PendingRequestManager {
 				throw;
 			}
 			try {
-				if (token.CanBeCanceled) {
-					var cancellationTokenRegistration = token.Register (static state => {
+				if (cancellationToken.CanBeCanceled) {
+					var cancellationTokenRegistration = cancellationToken.Register (static state => {
 						if (state is not ValueTuple<PendingRequestManager<TKey, TValue>, TKey> tuple) {
 							return;
 						}
 						tuple.Item1.TrySetCanceled (tuple.Item2);
 					}, (this, key), false);
 					pendingRequest.CancellationTokenRegistration = cancellationTokenRegistration;
-					if (token.IsCancellationRequested) {
+					if (cancellationToken.IsCancellationRequested) {
 						pendingRequest.TrySetCanceled ();
 						task = taskCompletionSource.Task;
 						return true;
@@ -82,6 +79,24 @@ namespace Eruru.PendingRequestManager {
 			}
 			task = taskCompletionSource.Task;
 			return true;
+		}
+		public bool TryCreate (TKey key, out Task<TValue>? task, object? state, CancellationToken cancellationToken) {
+			return TryCreate (key, out task, state, TaskCreationOptions.RunContinuationsAsynchronously, cancellationToken);
+		}
+		public bool TryCreate (
+			TKey key, out Task<TValue>? task, TaskCreationOptions taskCreationOptions,
+			CancellationToken cancellationToken
+		) {
+			return TryCreate (key, out task, null, taskCreationOptions, cancellationToken);
+		}
+		public bool TryCreate (TKey key, out Task<TValue>? task, CancellationToken cancellationToken) {
+			return TryCreate (key, out task, null, TaskCreationOptions.RunContinuationsAsynchronously, cancellationToken);
+		}
+		public bool TryCreate (
+			TKey key, out Task<TValue>? task, object? state = null,
+			TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously
+		) {
+			return TryCreate (key, out task, state, taskCreationOptions, CancellationToken.None);
 		}
 
 		public bool TrySetResult (TKey key, TValue value) {
@@ -130,14 +145,27 @@ namespace Eruru.PendingRequestManager {
 		}
 
 		public IDisposable Create (
-			TKey key, out Task<TValue>? task
-			, object? state = null, TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously
-			, CancellationToken? cancellationToken = null
+			TKey key, out Task<TValue>? task, object? state, TaskCreationOptions taskCreationOptions,
+			CancellationToken cancellationToken
 		) {
 			if (!TryCreate (key, out task, state, taskCreationOptions, cancellationToken)) {
 				return new PendingRequestManagerCreate (null, key);
 			}
 			return new PendingRequestManagerCreate (this, key);
+		}
+		public IDisposable Create (TKey key, out Task<TValue>? task, object? state, CancellationToken cancellationToken) {
+			return Create (key, out task, state, TaskCreationOptions.RunContinuationsAsynchronously, cancellationToken);
+		}
+		public IDisposable Create (
+			TKey key, out Task<TValue>? task, TaskCreationOptions taskCreationOptions, CancellationToken cancellationToken
+		) {
+			return Create (key, out task, null, taskCreationOptions, cancellationToken);
+		}
+		public IDisposable Create (
+			TKey key, out Task<TValue>? task, object? state = null,
+			TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously
+		) {
+			return Create (key, out task, state, taskCreationOptions, CancellationToken.None);
 		}
 
 		void CheckDisposed () {
@@ -161,14 +189,16 @@ namespace Eruru.PendingRequestManager {
 		}
 
 		sealed class PendingRequest (
-			TaskCompletionSource<TValue> taskCompletionSource, CancellationTokenSource? cancellationTokenSource
-			, CancellationToken cancellationToken
+			TaskCompletionSource<TValue> taskCompletionSource,
+			CancellationTokenSource cancellationTokenSource, CancellationTokenSource cancellationTokenSource1,
+			CancellationToken cancellationToken
 		) : IDisposable {
 
 			public CancellationTokenRegistration? CancellationTokenRegistration { get; set; }
 
 			readonly TaskCompletionSource<TValue> TaskCompletionSource = taskCompletionSource;
-			readonly CancellationTokenSource? CancellationTokenSource = cancellationTokenSource;
+			readonly CancellationTokenSource CancellationTokenSource = cancellationTokenSource;
+			readonly CancellationTokenSource CancellationTokenSource1 = cancellationTokenSource1;
 			readonly CancellationToken CancellationToken = cancellationToken;
 			int State;
 
@@ -178,6 +208,7 @@ namespace Eruru.PendingRequestManager {
 				}
 				CancellationTokenRegistration?.Dispose ();
 				CancellationTokenSource?.Dispose ();
+				CancellationTokenSource1?.Dispose ();
 				TaskCompletionSource.TrySetException (new ObjectDisposedException (nameof (PendingRequestManager<,>)));
 			}
 
