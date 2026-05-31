@@ -27,8 +27,9 @@ namespace Eruru.PendingRequestManager {
 		}
 
 		public bool TryCreate (
-			TKey key, out Task<TValue>? task, object? state, TaskCreationOptions taskCreationOptions,
-			CancellationToken cancellationToken
+			TKey key, out Task<TValue>? task, object? state = null,
+			TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously,
+			CancellationToken cancellationToken = default
 		) {
 			CheckDisposed ();
 #pragma warning disable CA2000 // 丢失范围之前释放对象
@@ -80,24 +81,6 @@ namespace Eruru.PendingRequestManager {
 			task = taskCompletionSource.Task;
 			return true;
 		}
-		public bool TryCreate (TKey key, out Task<TValue>? task, object? state, CancellationToken cancellationToken) {
-			return TryCreate (key, out task, state, TaskCreationOptions.RunContinuationsAsynchronously, cancellationToken);
-		}
-		public bool TryCreate (
-			TKey key, out Task<TValue>? task, TaskCreationOptions taskCreationOptions,
-			CancellationToken cancellationToken
-		) {
-			return TryCreate (key, out task, null, taskCreationOptions, cancellationToken);
-		}
-		public bool TryCreate (TKey key, out Task<TValue>? task, CancellationToken cancellationToken) {
-			return TryCreate (key, out task, null, TaskCreationOptions.RunContinuationsAsynchronously, cancellationToken);
-		}
-		public bool TryCreate (
-			TKey key, out Task<TValue>? task, object? state = null,
-			TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously
-		) {
-			return TryCreate (key, out task, state, taskCreationOptions, CancellationToken.None);
-		}
 
 		public bool TrySetResult (TKey key, TValue value) {
 			var isRemoved = PendingRequests.TryRemove (key, out var pendingRequest);
@@ -145,32 +128,14 @@ namespace Eruru.PendingRequestManager {
 		}
 
 		public IDisposable Create (
-			TKey key, out Task<TValue>? task, object? state, TaskCreationOptions taskCreationOptions,
-			CancellationToken cancellationToken
+			TKey key, out Task<TValue>? task, object? state = null,
+			TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously,
+			CancellationToken cancellationToken = default
 		) {
 			if (!TryCreate (key, out task, state, taskCreationOptions, cancellationToken)) {
 				return new PendingRequestManagerCreate (null, key);
 			}
 			return new PendingRequestManagerCreate (this, key);
-		}
-		public IDisposable Create (TKey key, out Task<TValue>? task, object? state, CancellationToken cancellationToken) {
-			return Create (key, out task, state, TaskCreationOptions.RunContinuationsAsynchronously, cancellationToken);
-		}
-		public IDisposable Create (
-			TKey key, out Task<TValue>? task, TaskCreationOptions taskCreationOptions, CancellationToken cancellationToken
-		) {
-			return Create (key, out task, null, taskCreationOptions, cancellationToken);
-		}
-		public IDisposable Create (
-			TKey key, out Task<TValue>? task, CancellationToken cancellationToken
-		) {
-			return Create (key, out task, null, TaskCreationOptions.RunContinuationsAsynchronously, cancellationToken);
-		}
-		public IDisposable Create (
-			TKey key, out Task<TValue>? task, object? state = null,
-			TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously
-		) {
-			return Create (key, out task, state, taskCreationOptions, CancellationToken.None);
 		}
 
 		void CheckDisposed () {

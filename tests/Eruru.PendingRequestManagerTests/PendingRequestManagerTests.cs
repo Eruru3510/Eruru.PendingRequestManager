@@ -13,15 +13,17 @@ namespace Eruru.PendingRequestManagerTests {
 		public void TryCreateDuplicateKey () {
 			using var pendingRequestManager = new PendingRequestManager<int, string> ();
 			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task, TestContext.Current.CancellationToken));
-			Assert.False (pendingRequestManager.TryCreate (key, out _, TestContext.Current.CancellationToken));
+			Assert.True (pendingRequestManager.TryCreate (key, out var task, cancellationToken: TestContext.Current.CancellationToken));
+			Assert.False (pendingRequestManager.TryCreate (key, out _, cancellationToken: TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
 		public async Task TrySetResult () {
 			using var pendingRequestManager = new PendingRequestManager<int, string> ();
 			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task, TestContext.Current.CancellationToken) && task != null);
+			Assert.True (pendingRequestManager.TryCreate (
+				key, out var task, cancellationToken: TestContext.Current.CancellationToken
+			) && task != null);
 			Assert.True (pendingRequestManager.TrySetResult (key, nameof (PendingRequestManager)));
 			Assert.Equal (nameof (PendingRequestManager), await task.ConfigureAwait (true));
 		}
@@ -30,7 +32,9 @@ namespace Eruru.PendingRequestManagerTests {
 		public Task TrySetException () {
 			using var pendingRequestManager = new PendingRequestManager<int, string> ();
 			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task, TestContext.Current.CancellationToken) && task != null);
+			Assert.True (pendingRequestManager.TryCreate (
+				key, out var task, cancellationToken: TestContext.Current.CancellationToken
+			) && task != null);
 			Assert.True (pendingRequestManager.TrySetException (key, new HttpRequestException ()));
 #pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 			return Assert.ThrowsAsync<HttpRequestException> (() => task);
@@ -41,7 +45,9 @@ namespace Eruru.PendingRequestManagerTests {
 		public Task TrySetCanceled () {
 			using var pendingRequestManager = new PendingRequestManager<int, string> ();
 			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task, TestContext.Current.CancellationToken) && task != null);
+			Assert.True (pendingRequestManager.TryCreate (
+				key, out var task, cancellationToken: TestContext.Current.CancellationToken
+			) && task != null);
 			Assert.True (pendingRequestManager.TrySetCanceled (key));
 #pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 			return Assert.ThrowsAsync<TaskCanceledException> (() => task);
@@ -73,7 +79,9 @@ namespace Eruru.PendingRequestManagerTests {
 		public async Task WaitingTimeoutAfterTryCreate () {
 			using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromMilliseconds (0) };
 			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task, TestContext.Current.CancellationToken) && task != null);
+			Assert.True (pendingRequestManager.TryCreate (
+				key, out var task, cancellationToken: TestContext.Current.CancellationToken
+			) && task != null);
 #pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 			await Assert.ThrowsAsync<TaskCanceledException> (() => task);
 #pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
@@ -96,7 +104,9 @@ namespace Eruru.PendingRequestManagerTests {
 		public async Task DisposeAfterTryCreate () {
 			using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromMilliseconds (50) };
 			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task, TestContext.Current.CancellationToken) && task != null);
+			Assert.True (pendingRequestManager.TryCreate (
+				key, out var task, cancellationToken: TestContext.Current.CancellationToken
+			) && task != null);
 			pendingRequestManager.Dispose ();
 #pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 			await Assert.ThrowsAsync<ObjectDisposedException> (() => task);
