@@ -162,6 +162,11 @@ namespace Eruru.PendingRequestManager {
 			return Create (key, out task, null, taskCreationOptions, cancellationToken);
 		}
 		public IDisposable Create (
+			TKey key, out Task<TValue>? task, CancellationToken cancellationToken
+		) {
+			return Create (key, out task, null, TaskCreationOptions.RunContinuationsAsynchronously, cancellationToken);
+		}
+		public IDisposable Create (
 			TKey key, out Task<TValue>? task, object? state = null,
 			TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously
 		) {
