@@ -177,8 +177,8 @@ namespace Eruru.PendingRequestManager {
 					return;
 				}
 				CancellationTokenRegistration?.Dispose ();
-				CancellationTokenSource?.Dispose ();
-				CancellationTokenSource1?.Dispose ();
+				CancellationTokenSource.Dispose ();
+				CancellationTokenSource1.Dispose ();
 				TaskCompletionSource.TrySetException (new ObjectDisposedException (nameof (PendingRequestManager<,>)));
 			}
 
