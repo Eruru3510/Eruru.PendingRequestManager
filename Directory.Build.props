@@ -10,6 +10,8 @@
 		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
 		<EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
 		<EnableAotAnalyzer>true</EnableAotAnalyzer>
+
+		<NoWarn>$(NoWarn);IDE0130;CA1515;CA1724</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Release'">

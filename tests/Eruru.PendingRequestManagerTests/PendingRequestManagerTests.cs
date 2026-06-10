@@ -1,166 +1,162 @@
 using System.Collections.Concurrent;
 using Eruru.PendingRequestManager;
 
-namespace Eruru.PendingRequestManagerTests {
+namespace Eruru.PendingRequestManagerTests;
 
-#pragma warning disable CA1724 // 类型名与命名空间名称整体或部分冲突
-	public class PendingRequestManagerTests (ITestOutputHelper testOutputHelper) {
-#pragma warning restore CA1724 // 类型名与命名空间名称整体或部分冲突
+public class PendingRequestManagerTests (ITestOutputHelper testOutputHelper) {
 
-		readonly ITestOutputHelper TestOutputHelper = testOutputHelper;
+	readonly ITestOutputHelper TestOutputHelper = testOutputHelper;
 
-		[Fact]
-		public void TryCreateDuplicateKey () {
-			using var pendingRequestManager = new PendingRequestManager<int, string> ();
-			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (key, out var task, cancellationToken: TestContext.Current.CancellationToken));
-			Assert.False (pendingRequestManager.TryCreate (key, out _, cancellationToken: TestContext.Current.CancellationToken));
-		}
+	[Fact]
+	public void TryCreateDuplicateKey () {
+		using var pendingRequestManager = new PendingRequestManager<int, string> ();
+		var key = int.MaxValue;
+		Assert.True (pendingRequestManager.TryCreate (key, out var task, cancellationToken: TestContext.Current.CancellationToken));
+		Assert.False (pendingRequestManager.TryCreate (key, out _, cancellationToken: TestContext.Current.CancellationToken));
+	}
 
-		[Fact]
-		public async Task TrySetResult () {
-			using var pendingRequestManager = new PendingRequestManager<int, string> ();
-			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (
-				key, out var task, cancellationToken: TestContext.Current.CancellationToken
-			) && task != null);
-			Assert.True (pendingRequestManager.TrySetResult (key, nameof (PendingRequestManager)));
-			Assert.Equal (nameof (PendingRequestManager), await task.ConfigureAwait (true));
-		}
+	[Fact]
+	public async Task TrySetResult () {
+		using var pendingRequestManager = new PendingRequestManager<int, string> ();
+		var key = int.MaxValue;
+		Assert.True (pendingRequestManager.TryCreate (
+			key, out var task, cancellationToken: TestContext.Current.CancellationToken
+		) && task != null);
+		Assert.True (pendingRequestManager.TrySetResult (key, nameof (PendingRequestManager)));
+		Assert.Equal (nameof (PendingRequestManager), await task.ConfigureAwait (true));
+	}
 
-		[Fact]
-		public Task TrySetException () {
-			using var pendingRequestManager = new PendingRequestManager<int, string> ();
-			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (
-				key, out var task, cancellationToken: TestContext.Current.CancellationToken
-			) && task != null);
-			Assert.True (pendingRequestManager.TrySetException (key, new HttpRequestException ()));
+	[Fact]
+	public Task TrySetException () {
+		using var pendingRequestManager = new PendingRequestManager<int, string> ();
+		var key = int.MaxValue;
+		Assert.True (pendingRequestManager.TryCreate (
+			key, out var task, cancellationToken: TestContext.Current.CancellationToken
+		) && task != null);
+		Assert.True (pendingRequestManager.TrySetException (key, new HttpRequestException ()));
 #pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
-			return Assert.ThrowsAsync<HttpRequestException> (() => task);
+		return Assert.ThrowsAsync<HttpRequestException> (() => task);
 #pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
-		}
+	}
 
-		[Fact]
-		public Task TrySetCanceled () {
-			using var pendingRequestManager = new PendingRequestManager<int, string> ();
-			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (
-				key, out var task, cancellationToken: TestContext.Current.CancellationToken
-			) && task != null);
-			Assert.True (pendingRequestManager.TrySetCanceled (key));
+	[Fact]
+	public Task TrySetCanceled () {
+		using var pendingRequestManager = new PendingRequestManager<int, string> ();
+		var key = int.MaxValue;
+		Assert.True (pendingRequestManager.TryCreate (
+			key, out var task, cancellationToken: TestContext.Current.CancellationToken
+		) && task != null);
+		Assert.True (pendingRequestManager.TrySetCanceled (key));
 #pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
-			return Assert.ThrowsAsync<TaskCanceledException> (() => task);
+		return Assert.ThrowsAsync<TaskCanceledException> (() => task);
 #pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
-		}
+	}
 
-		[Fact]
-		public void TrySetResultWithoutTryCreate () {
-			using var pendingRequestManager = new PendingRequestManager<int, string> ();
-			var key = int.MaxValue;
-			Assert.False (pendingRequestManager.TrySetResult (key, nameof (PendingRequestManager)));
-		}
+	[Fact]
+	public void TrySetResultWithoutTryCreate () {
+		using var pendingRequestManager = new PendingRequestManager<int, string> ();
+		var key = int.MaxValue;
+		Assert.False (pendingRequestManager.TrySetResult (key, nameof (PendingRequestManager)));
+	}
 
-		[Fact]
-		public void TrySetExceptionWithoutTryCreate () {
-			using var pendingRequestManager = new PendingRequestManager<int, string> ();
-			var key = int.MaxValue;
-			Assert.False (pendingRequestManager.TrySetException (key, new HttpRequestException ()));
-		}
+	[Fact]
+	public void TrySetExceptionWithoutTryCreate () {
+		using var pendingRequestManager = new PendingRequestManager<int, string> ();
+		var key = int.MaxValue;
+		Assert.False (pendingRequestManager.TrySetException (key, new HttpRequestException ()));
+	}
 
-		[Fact]
-		public void TrySetCanceledWithoutTryCreate () {
-			using var pendingRequestManager = new PendingRequestManager<int, string> ();
-			var key = int.MaxValue;
-			Assert.False (pendingRequestManager.TrySetCanceled (key));
-		}
+	[Fact]
+	public void TrySetCanceledWithoutTryCreate () {
+		using var pendingRequestManager = new PendingRequestManager<int, string> ();
+		var key = int.MaxValue;
+		Assert.False (pendingRequestManager.TrySetCanceled (key));
+	}
 
-		[Fact]
-		public async Task WaitingTimeoutAfterTryCreate () {
-			using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromMilliseconds (0) };
-			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (
-				key, out var task, cancellationToken: TestContext.Current.CancellationToken
-			) && task != null);
+	[Fact]
+	public async Task WaitingTimeoutAfterTryCreate () {
+		using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromMilliseconds (0) };
+		var key = int.MaxValue;
+		Assert.True (pendingRequestManager.TryCreate (
+			key, out var task, cancellationToken: TestContext.Current.CancellationToken
+		) && task != null);
 #pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
-			await Assert.ThrowsAsync<TaskCanceledException> (() => task);
+		await Assert.ThrowsAsync<TaskCanceledException> (() => task);
 #pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
-		}
+	}
 
-		[Fact]
-		public async Task WaitingCustomTimeoutAfterTryCreate () {
-			using var pendingRequestManager = new PendingRequestManager<int, string> ();
-			using var cancellationTokenSource = new CancellationTokenSource (TimeSpan.FromMilliseconds (50));
-			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (
-				key, out var task, cancellationToken: cancellationTokenSource.Token
-			) && task != null);
+	[Fact]
+	public async Task WaitingCustomTimeoutAfterTryCreate () {
+		using var pendingRequestManager = new PendingRequestManager<int, string> ();
+		using var cancellationTokenSource = new CancellationTokenSource (TimeSpan.FromMilliseconds (50));
+		var key = int.MaxValue;
+		Assert.True (pendingRequestManager.TryCreate (
+			key, out var task, cancellationToken: cancellationTokenSource.Token
+		) && task != null);
 #pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
-			await Assert.ThrowsAsync<TaskCanceledException> (() => task);
+		await Assert.ThrowsAsync<TaskCanceledException> (() => task);
 #pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
-		}
+	}
 
-		[Fact]
-		public async Task DisposeAfterTryCreate () {
-			using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromMilliseconds (50) };
-			var key = int.MaxValue;
-			Assert.True (pendingRequestManager.TryCreate (
-				key, out var task, cancellationToken: TestContext.Current.CancellationToken
-			) && task != null);
-			pendingRequestManager.Dispose ();
+	[Fact]
+	public async Task DisposeAfterTryCreate () {
+		using var pendingRequestManager = new PendingRequestManager<int, string> () { Timeout = TimeSpan.FromMilliseconds (50) };
+		var key = int.MaxValue;
+		Assert.True (pendingRequestManager.TryCreate (
+			key, out var task, cancellationToken: TestContext.Current.CancellationToken
+		) && task != null);
+		pendingRequestManager.Dispose ();
 #pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
-			await Assert.ThrowsAsync<ObjectDisposedException> (() => task);
+		await Assert.ThrowsAsync<ObjectDisposedException> (() => task);
 #pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
-		}
+	}
 
-		[Fact]
-		public async Task ThreadSafe () {
-			using var cancellationTokenSource = new CancellationTokenSource (TimeSpan.FromMilliseconds (1000));
-			PendingRequestManager<int, string>? pendingRequestManager = null;
-			PendingRequestManager<int, string>? newPendingRequestManager = null;
-			ConcurrentQueue<PendingRequestManager<int, string>> pendingRequestManagers = [];
-			var useCounter = 0;
-			var disposeCounter = 0;
-			await Task.WhenAll (
-				Task.Run (async () => {
-					while (!cancellationTokenSource.Token.IsCancellationRequested) {
-						var oldPendingRequestManager = Interlocked.CompareExchange (ref pendingRequestManager, null, null);
-						if (oldPendingRequestManager == null) {
+	[Fact]
+	public async Task ThreadSafe () {
+		using var cancellationTokenSource = new CancellationTokenSource (TimeSpan.FromMilliseconds (1000));
+		PendingRequestManager<int, string>? pendingRequestManager = null;
+		PendingRequestManager<int, string>? newPendingRequestManager = null;
+		ConcurrentQueue<PendingRequestManager<int, string>> pendingRequestManagers = [];
+		var useCounter = 0;
+		var disposeCounter = 0;
+		await Task.WhenAll (
+			Task.Run (async () => {
+				while (!cancellationTokenSource.Token.IsCancellationRequested) {
+					var oldPendingRequestManager = Interlocked.CompareExchange (ref pendingRequestManager, null, null);
+					if (oldPendingRequestManager == null) {
+						continue;
+					}
+					var key = Interlocked.Increment (ref useCounter);
+					try {
+						using var _ = oldPendingRequestManager.Create (key, out var task);
+						if (task == null) {
 							continue;
 						}
-						var key = Interlocked.Increment (ref useCounter);
-						try {
-							using var _ = oldPendingRequestManager.Create (key, out var task);
-							if (task == null) {
-								continue;
-							}
-							oldPendingRequestManager.TrySetResult (key, nameof (PendingRequestManager));
-							Assert.Equal (nameof (PendingRequestManager), await task.ConfigureAwait (false));
-						} catch (ObjectDisposedException) {
+						oldPendingRequestManager.TrySetResult (key, nameof (PendingRequestManager));
+						Assert.Equal (nameof (PendingRequestManager), await task.ConfigureAwait (false));
+					} catch (ObjectDisposedException) {
 
-						} catch (OperationCanceledException) {
+					} catch (OperationCanceledException) {
 
-						}
 					}
-				}, TestContext.Current.CancellationToken)
-				, Task.Run (async () => {
-					while (!cancellationTokenSource.Token.IsCancellationRequested) {
-						newPendingRequestManager = new PendingRequestManager<int, string> ();
-						var oldPendingRequestManager = Interlocked.Exchange (ref pendingRequestManager, newPendingRequestManager);
-						oldPendingRequestManager?.Dispose ();
-						Interlocked.Increment (ref disposeCounter);
-						pendingRequestManagers.Enqueue (newPendingRequestManager);
-						await Task.Delay (TimeSpan.FromMilliseconds (1)).ConfigureAwait (false);
-					}
-				}, TestContext.Current.CancellationToken)
-			);
-			newPendingRequestManager?.Dispose ();
-			TestOutputHelper.WriteLine ($"{nameof (useCounter)}: {useCounter:#,0.##} {nameof (disposeCounter)}: {disposeCounter:#,0.##}");
-			foreach (var item in pendingRequestManagers) {
-				Assert.Equal (0, item.Count);
-			}
+				}
+			}, TestContext.Current.CancellationToken)
+			, Task.Run (async () => {
+				while (!cancellationTokenSource.Token.IsCancellationRequested) {
+					newPendingRequestManager = new PendingRequestManager<int, string> ();
+					var oldPendingRequestManager = Interlocked.Exchange (ref pendingRequestManager, newPendingRequestManager);
+					oldPendingRequestManager?.Dispose ();
+					Interlocked.Increment (ref disposeCounter);
+					pendingRequestManagers.Enqueue (newPendingRequestManager);
+					await Task.Delay (TimeSpan.FromMilliseconds (1)).ConfigureAwait (false);
+				}
+			}, TestContext.Current.CancellationToken)
+		);
+		newPendingRequestManager?.Dispose ();
+		TestOutputHelper.WriteLine ($"{nameof (useCounter)}: {useCounter:#,0.##} {nameof (disposeCounter)}: {disposeCounter:#,0.##}");
+		foreach (var item in pendingRequestManagers) {
+			Assert.Equal (0, item.Count);
 		}
-
 	}
 
 }
