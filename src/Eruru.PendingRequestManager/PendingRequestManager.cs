@@ -54,9 +54,14 @@ public class PendingRequestManager<TKey, TValue> : IDisposable where TKey : notn
 		try {
 			if (cancellationToken.CanBeCanceled) {
 				var cancellationTokenRegistration = cancellationToken.Register (static state => {
-					if (state is not ValueTuple<PendingRequestManager<TKey, TValue>, TKey> tuple) {
-						return;
+#if NET
+					ArgumentNullException.ThrowIfNull (state, nameof (state));
+#else
+					if (state == null) {
+						throw new ArgumentNullException (nameof (state));
 					}
+#endif
+					var tuple = (ValueTuple<PendingRequestManager<TKey, TValue>, TKey>)state;
 					tuple.Item1.TrySetCanceled (tuple.Item2);
 				}, (this, key), false);
 				pendingRequest.CancellationTokenRegistration = cancellationTokenRegistration;
